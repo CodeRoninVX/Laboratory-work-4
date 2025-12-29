@@ -1,0 +1,136 @@
+CREATE TABLE users (
+  user_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY
+);
+
+CREATE TABLE profiles (
+  profile_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  personal_data TEXT,
+  settings TEXT,
+  user_id INTEGER NOT NULL UNIQUE,
+  CONSTRAINT fk_profiles_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE preferences (
+  preferences_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  parameters TEXT,
+  interests TEXT,
+  constraints TEXT,
+  profile_id INTEGER NOT NULL,
+  CONSTRAINT fk_preferences_profile
+    FOREIGN KEY (profile_id) REFERENCES profiles(profile_id)
+);
+
+CREATE TABLE contexts (
+  context_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  "time" TEXT,
+  place TEXT,
+  situation TEXT,
+  well_being TEXT,
+  mood TEXT,
+  user_id INTEGER NOT NULL,
+  CONSTRAINT fk_contexts_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE supports (
+  support_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  CONSTRAINT fk_supports_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE recommendations (
+  recommendation_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  advice_hint TEXT,
+  support_id INTEGER NOT NULL,
+  CONSTRAINT fk_recommendations_support
+    FOREIGN KEY (support_id) REFERENCES supports(support_id)
+);
+
+CREATE TABLE feedbacks (
+  feedback_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  rating INTEGER,
+  message TEXT,
+  user_id INTEGER NOT NULL,
+  CONSTRAINT fk_feedbacks_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE geolocations (
+  geolocation_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  location TEXT
+);
+
+CREATE TABLE destinations (
+  destination_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  address TEXT,
+  map_point TEXT
+);
+
+CREATE TABLE safe_routes (
+  saferoute_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  geolocation_id INTEGER NOT NULL,
+  destination_id INTEGER NOT NULL,
+  CONSTRAINT fk_safe_routes_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+  CONSTRAINT fk_safe_routes_geo
+    FOREIGN KEY (geolocation_id) REFERENCES geolocations(geolocation_id),
+  CONSTRAINT fk_safe_routes_destination
+    FOREIGN KEY (destination_id) REFERENCES destinations(destination_id)
+);
+
+CREATE TABLE routines (
+  routine_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  actions_habits TEXT
+);
+
+CREATE TABLE reminder_settings (
+  remindersettings_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id INTEGER NOT NULL UNIQUE,
+  CONSTRAINT fk_reminder_settings_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE triggers (
+  trigger_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  condition TEXT
+);
+
+CREATE TABLE reminder_times (
+  remindertime_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  time_value TIME
+);
+
+CREATE TABLE reminder_states (
+  reminderstate_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  state_value TEXT NOT NULL,
+  CONSTRAINT chk_reminder_states_value_regex
+    CHECK (state_value ~ '^(увімкнене|вимкнене)$')
+);
+
+CREATE TABLE reminders (
+  reminder_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  type TEXT NOT NULL,
+  message TEXT,
+  routine_id INTEGER NOT NULL,
+  remindersettings_id INTEGER NOT NULL,
+  trigger_id INTEGER NOT NULL,
+  remindertime_id INTEGER NOT NULL,
+  reminderstate_id INTEGER NOT NULL,
+
+  CONSTRAINT chk_reminders_type_regex
+    CHECK (type ~ '^(сон|харчування|відновлення)$'),
+
+CONSTRAINT fk_reminders_routine
+    FOREIGN KEY (routine_id) REFERENCES routines(routine_id),
+  CONSTRAINT fk_reminders_settings
+    FOREIGN KEY (remindersettings_id) REFERENCES reminder_settings(remindersettings_id),
+  CONSTRAINT fk_reminders_trigger
+    FOREIGN KEY (trigger_id) REFERENCES triggers(trigger_id),
+  CONSTRAINT fk_reminders_time
+    FOREIGN KEY (remindertime_id) REFERENCES reminder_times(remindertime_id),
+  CONSTRAINT fk_reminders_state
+    FOREIGN KEY (reminderstate_id) REFERENCES reminder_states(reminderstate_id)
+);
